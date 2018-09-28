@@ -11,6 +11,7 @@ const miniRefreshToken = process.env.MINI_REFRESH;
 const expiredAccessToken = 'BQB90uwLK6mkdxxkJbOraxEQt0DWcDW_k0N1Qt4TqNAXZPN3p9w_-ZXTnkqZjkxxZZm9d0FAiZsoh8ndGLuUGQw1oEf66SyEMxtDIIafm7QG-3KviANvQEbjcQzBSvq9swA9aVo9AQzAmoSSHTaLs2AJtocOdo0G7eQE';
 let accessToken = 'invalid';
 let songId = '';
+let powerState = 'stanby';
 // this the error when the access token is invalid:
 //    { error: { status: 401, message: 'Invalid access token' } }
 // this is the error when access token has expired:
@@ -92,6 +93,11 @@ function monitorPlayingSong(accessToken, rokuConnection) {
       if (response.status == 200) {
         // if the song is currently playing
         if (response.data.is_playing == true) {
+          if (powerState == 'standby') {
+            // connect soundbridge to preset station 1
+            rokuConnection.exec('PlayPreset 0');
+            powerState = 'on';
+          }
           // if it is not the same song from last pass
           if (response.data.item.id != songId) {
             // update the songId
@@ -100,12 +106,11 @@ function monitorPlayingSong(accessToken, rokuConnection) {
             songPosition = response.data.progress_ms + 1000; // (new Date().getTime() - response.data.timestamp);
             // set the soundbridge song to the spotify song, at the correct playback postiion
             setSoundBridgeSong(miniAccessToken.data.access_token, songId, songPosition);
-            // connect soundbridge to preset station 1
-            rokuConnection.exec('PlayPreset 0')
           }
         } else {
+          powerState = 'standby';
           // turn off the soundbridge
-          rokuConnection.exec('SetPowerState standby')
+          rokuConnection.exec('SetPowerState standby');
         }
       } else {
         console.log(response.response.status + ' : ' + response.response.statusText);
@@ -150,6 +155,7 @@ startApp()
   .then(() => {
     rokuConnection.connect(rokuParams)
       .then(() => {
-        setInterval(monitorPlayingSong, 2000, dirkAccessToken.data.access_token, rokuConnection);
+        monitorPlayingSong(dirkAccessToken.data.access_token, rokuConnection);
+        setInterval(monitorPlayingSong, 1000, dirkAccessToken.data.access_token, rokuConnection);
       })
   });
