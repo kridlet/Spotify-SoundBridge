@@ -1,5 +1,7 @@
 const axios = require('axios');
 const Telnet = require('telnet-client');
+const fs = require('fs');
+
 require('dotenv').config();
 
 let rokuConnection = new Telnet()
@@ -8,21 +10,24 @@ const clientSecret = process.env.CLIENT_SECRET;
 const dirkRefreshToken = process.env.DIRK_REFRESH;
 const jessRefreshToken = process.env.JESS_RERFESH;
 const miniRefreshToken = process.env.MINI_REFRESH;
-const expiredAccessToken = 'BQB90uwLK6mkdxxkJbOraxEQt0DWcDW_k0N1Qt4TqNAXZPN3p9w_-ZXTnkqZjkxxZZm9d0FAiZsoh8ndGLuUGQw1oEf66SyEMxtDIIafm7QG-3KviANvQEbjcQzBSvq9swA9aVo9AQzAmoSSHTaLs2AJtocOdo0G7eQE';
-let accessToken = 'invalid';
+
 let songId = '';
 let powerState = 'stanby';
-// this the error when the access token is invalid:
-//    { error: { status: 401, message: 'Invalid access token' } }
-// this is the error when access token has expired:
-//    { error: { status: 401, message: 'The access token expired' } }
-// this is the error when the device is not found:
-//    { error: { status: 404, message: 'Device not found' } }
+let rokuParams = {
+  host: '10.0.10.35',
+  port: 5555,
+  shellPrompt: '',
+  timeout: 1500
+}
 
-// 1. use refresh tokens (dirk and soundbridge) to get access tokens
-// 2. use the dirk access token to read the current playing song in dirk's account, every second
-// 3. use the soundbridge token to play that song on the mini/soundbridge link
-// 4. if either of the access tokens expire, get new ones using the refresh tokens.
+function logText(logText, consoleLog = 1, fileLog = 1) {
+    if (consoleLog) console.log(logText);
+    if (fileLog) {
+        fs.appendFile('soundBridge.log', logText + "\n", 'utf8', function (err) {
+            if (err) console.log(err);
+        });
+    }
+}
 
 async function getAccessToken(refreshToken) {
   try {
@@ -45,6 +50,25 @@ async function getAccessToken(refreshToken) {
   }
 }
 
+async function getSpotifyState(accessToken) {
+  try {
+    // request current playing song
+    let response = await axios({
+      method: 'get',
+      url: 'https://api.spotify.com/v1/me/player',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + accessToken
+      }
+    });
+    return response;
+  } catch (error) {
+    logText(error,1,0);
+    return error;
+  }
+}
+
 async function getCurrentSong(accessToken) {
   try {
     // request current playing song
@@ -57,15 +81,14 @@ async function getCurrentSong(accessToken) {
         'Authorization': 'Bearer ' + accessToken
       }
     });
-    // console.log(response);
     return response;
   } catch (error) {
-    // console.log(error);
+    logText(error,1,0);
     return error;
   }
 }
 
-function setSoundBridgeSong(accessToken, songId, songPosition) {
+function setSoundBridgeSong(accessToken, songId, songPosition, artistName, songName) {
   // request current playing song
   axios({
     method: 'put',
@@ -78,10 +101,17 @@ function setSoundBridgeSong(accessToken, songId, songPosition) {
     }
   }).then(response => {
     if (response.status == 204) {
-      console.log('successfully set song');
+      const date = new Date();
+      const dateString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000 ))
+                    .toISOString()
+                    .split("T",2);
+      logText(songId + "\t" + dateString[0] +  "\t"  + dateString[1].slice(0, -1) +  "\t" + songName + "\t" + artistName, 1, 1);
     }
   }).catch(error => {
-    console.log(error.response.status + ' : ' + error.response.statusText);
+    if (error.response.status == 404) {
+      logText(error, 1, 0);
+    }
+    logText("error setting song on mini - " + error.response.status + ' : ' + error.response.statusText, 1, 1);
   });
 }
 
@@ -102,10 +132,12 @@ function monitorPlayingSong(accessToken, rokuConnection) {
           if (response.data.item.id != songId) {
             // update the songId
             songId = response.data.item.id;
+            artistName = response.data.item.artists[0].name;
+            songName = response.data.item.name;
             // set the mini play position to the spotify play position - offset from time info pulled from spotify
-            songPosition = response.data.progress_ms + 1000; // (new Date().getTime() - response.data.timestamp);
+            songPosition = response.data.progress_ms + 800; // (new Date().getTime() - response.data.timestamp);
             // set the soundbridge song to the spotify song, at the correct playback postiion
-            setSoundBridgeSong(miniAccessToken.data.access_token, songId, songPosition);
+            setSoundBridgeSong(miniAccessToken.data.access_token, songId, songPosition, artistName, songName);
           }
         } else {
           powerState = 'standby';
@@ -113,14 +145,14 @@ function monitorPlayingSong(accessToken, rokuConnection) {
           rokuConnection.exec('SetPowerState standby');
         }
       } else {
-        console.log(response.response.status + ' : ' + response.response.statusText);
+        logText("error getting currently playing song - " + response.response.status + ' : ' + response.response.statusText, 0, 1);
         if (response.response.statusText == 'The access token expired') {
-          console.log('expired token');
+          logText('expired token', 0, 1);
         }
       }
     })
     .catch(error => {
-      console.log("catch error " + error);
+      logText(error, 1, 0);
     });
 }
 
@@ -128,34 +160,51 @@ const startApp = async () => {
   try {
     dirkAccessToken = await getAccessToken(dirkRefreshToken);
   } catch (error) {
-    console.log(error);
+    logText(error, 1, 0);
   }
   try {
     miniAccessToken = await getAccessToken(miniRefreshToken);
   } catch (error) {
-    console.log(error);
+    logText(error, 1, 0);
   }
   if (dirkAccessToken.status == 200 && miniAccessToken.status == 200) {
-    console.log("dirk", dirkAccessToken.data.access_token);
-    console.log("mini", miniAccessToken.data.access_token);
+    logText("dirk access token - " + dirkAccessToken.data.access_token, 0, 1);
+    logText("mini access token - " + miniAccessToken.data.access_token, 0, 1);
   } else {
-    console.log("outer");
+    logText("error retrieving access tokens", 1, 0);
   }
-}
-
-
-let rokuParams = {
-  host: '10.0.10.35',
-  port: 5555,
-  shellPrompt: '',
-  timeout: 1500
 }
 
 startApp()
   .then(() => {
-    rokuConnection.connect(rokuParams)
-      .then(() => {
-        monitorPlayingSong(dirkAccessToken.data.access_token, rokuConnection);
-        setInterval(monitorPlayingSong, 1000, dirkAccessToken.data.access_token, rokuConnection);
-      })
+    getSpotifyState(dirkAccessToken.data.access_token)
+    .then(response => {
+      // console.log(response);
+      // if there is not an active spotify client
+      if (response.status == 204) {
+      
+      // if the song is currently playing
+        if (powerState != 'standby') {
+          powerState = 'standby';
+          // turn off the soundbridge
+          rokuConnection.exec('SetPowerState standby');
+        }
+      } 
+      else if ((response.status == 200)) {
+        rokuConnection.connect(rokuParams)
+        .then(() => {
+          monitorPlayingSong(dirkAccessToken.data.access_token, rokuConnection);
+          setInterval(monitorPlayingSong, 1000, dirkAccessToken.data.access_token, rokuConnection);
+        })
+      }
+      else {
+        logText("error getting state of spotify account - " + response.response.status + ' : ' + response.response.statusText, 0, 1);
+        if (response.response.statusText == 'The access token expired') {
+          logText('expired token', 1, 0);
+        }
+      }
+    })
+    .catch(error => {
+      logText(error, 1, 0);
+    });
   });
