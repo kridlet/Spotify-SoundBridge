@@ -155,6 +155,7 @@ function monitorPlayingSong(accessToken, rokuConnection) {
         logText("error getting currently playing song - " + response.response.status + ' : ' + response.response.statusText, 0, 1);
         if (response.response.statusText == 'The access token expired') {
           logText('expired token', 0, 1);
+          main();
         }
       }
     })
@@ -163,7 +164,7 @@ function monitorPlayingSong(accessToken, rokuConnection) {
     });
 }
 
-const startApp = async () => {
+const getAccessTokens = async () => {
   try {
     dirkAccessToken = await getAccessToken(dirkRefreshToken);
   } catch (error) {
@@ -182,36 +183,40 @@ const startApp = async () => {
   }
 }
 
-startApp()
-  .then(() => {
-    getSpotifyState(dirkAccessToken.data.access_token)
-    .then(response => {
-      // console.log(response);
-      // if there is not an active spotify client
-      if (response.status == 204) {
-      
-      // if the song is currently playing
-        if (powerState != 'standby') {
-          powerState = 'standby';
-          // turn off the soundbridge
-          rokuConnection.exec('SetPowerState standby');
+function main() {
+  getAccessTokens()
+    .then(() => {
+      getSpotifyState(dirkAccessToken.data.access_token)
+      .then(response => {
+        // console.log(response);
+        // if there is not an active spotify client
+        if (response.status == 204) {
+        
+        // if the song is currently playing
+          if (powerState != 'standby') {
+            powerState = 'standby';
+            // turn off the soundbridge
+            rokuConnection.exec('SetPowerState standby');
+          }
+        } 
+        else if ((response.status == 200)) {
+          rokuConnection.connect(rokuParams)
+          .then(() => {
+            monitorPlayingSong(dirkAccessToken.data.access_token, rokuConnection);
+            setInterval(monitorPlayingSong, 1000, dirkAccessToken.data.access_token, rokuConnection);
+          })
         }
-      } 
-      else if ((response.status == 200)) {
-        rokuConnection.connect(rokuParams)
-        .then(() => {
-          monitorPlayingSong(dirkAccessToken.data.access_token, rokuConnection);
-          setInterval(monitorPlayingSong, 1000, dirkAccessToken.data.access_token, rokuConnection);
-        })
-      }
-      else {
-        logText("error getting state of spotify account - " + response.response.status + ' : ' + response.response.statusText, 0, 1);
-        if (response.response.statusText == 'The access token expired') {
-          logText('expired token', 1, 0);
+        else {
+          logText("error getting state of spotify account - " + response.response.status + ' : ' + response.response.statusText, 0, 1);
+          if (response.response.statusText == 'The access token expired') {
+            logText('expired token', 1, 0);
+          }
         }
-      }
-    })
-    .catch(error => {
-      logText(error, 1, 0);
+      })
+      .catch(error => {
+        logText(error, 1, 0);
+      });
     });
-  });
+}
+
+main();
