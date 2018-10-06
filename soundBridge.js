@@ -183,6 +183,11 @@ const getAccessTokens = async () => {
   }
 }
 
+function startSpotify(){
+	return execute('tell application "Spotify" to activate');
+}
+
+
 function main() {
   getAccessTokens()
     .then(() => {
@@ -219,4 +224,6 @@ function main() {
     });
 }
 
+spotify = startSpotify();
+console.log(spotify);
 main();
