@@ -21,12 +21,18 @@ let rokuParams = {
 }
 
 function logText(logText, consoleLog = 1, fileLog = 1) {
-    if (consoleLog) console.log(logText);
-    if (fileLog) {
-        fs.appendFile('soundBridge.log', logText + "\n", 'utf8', function (err) {
-            if (err) console.log(err);
-        });
-    }
+  if (consoleLog) console.log(logText);
+  if (fileLog) {
+    fs.appendFile('soundBridge.log', logText + "\n", 'utf8', function (err) {
+        if (err) console.log(err);
+    });
+  }
+}
+
+function logSong(logText) {
+  fs.appendFile('spotifySong.log', logText + "\n", 'utf8', function (err) {
+    if (err) console.log(err);
+  });
 }
 
 async function getAccessToken(refreshToken) {
@@ -88,7 +94,7 @@ async function getCurrentSong(accessToken) {
   }
 }
 
-function setSoundBridgeSong(accessToken, songId, songPosition, artistName, songName) {
+function setSoundBridgeSong(accessToken, songId, songPosition) {
   // request current playing song
   axios({
     method: 'put',
@@ -101,11 +107,7 @@ function setSoundBridgeSong(accessToken, songId, songPosition, artistName, songN
     }
   }).then(response => {
     if (response.status == 204) {
-      const date = new Date();
-      const dateString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000 ))
-                    .toISOString()
-                    .split("T",2);
-      logText(songId + "\t" + dateString[0] +  "\t"  + dateString[1].slice(0, -1) +  "\t" + songName + "\t" + artistName, 1, 1);
+      logText("successfully set song on mini");
     }
   }).catch(error => {
     if (error.response.status == 404) {
@@ -134,10 +136,15 @@ function monitorPlayingSong(accessToken, rokuConnection) {
             songId = response.data.item.id;
             artistName = response.data.item.artists[0].name;
             songName = response.data.item.name;
+            date = new Date();
+            dateString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000 ))
+              .toISOString()
+              .split("T",2);
+            logSong(songId + "\t" + dateString[0] +  "\t"  + dateString[1].slice(0, -1) +  "\t" + songName + "\t" + artistName, 1, 1);
             // set the mini play position to the spotify play position - offset from time info pulled from spotify
             songPosition = response.data.progress_ms + 800; // (new Date().getTime() - response.data.timestamp);
             // set the soundbridge song to the spotify song, at the correct playback postiion
-            setSoundBridgeSong(miniAccessToken.data.access_token, songId, songPosition, artistName, songName);
+            setSoundBridgeSong(miniAccessToken.data.access_token, songId, songPosition);
           }
         } else {
           powerState = 'standby';
