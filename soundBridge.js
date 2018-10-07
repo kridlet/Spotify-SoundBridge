@@ -99,24 +99,37 @@ async function getCurrentSong(accessToken) {
 
 function setSoundBridgeSong(accessToken, songId, songPosition) {
   // request current playing song
-  axios({
-    method: 'put',
-    url: 'https://api.spotify.com/v1/me/player/play',
-    data: '{"uris":["spotify:track:' + songId + '"], "position_ms":' + songPosition + '}',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + accessToken
-    }
-  }).then(response => {
-    if (response.status == 204) {
-      logText("successfully set song on mini");
-    }
-  }).catch(error => {
-    if (error.response.status == 404) {
-      logText("error setting song on mini - " + error.response.status + ' : ' + error.response.statusText, 1, 1);
+  // axios({
+  //   method: 'put',
+  //   url: 'https://api.spotify.com/v1/me/player/play',
+  //   data: '{"uris":["spotify:track:' + songId + '"], "position_ms":' + songPosition + '}',
+  //   headers: {
+  //     'Accept': 'application/json',
+  //     'Content-Type': 'application/json',
+  //     'Authorization': 'Bearer ' + accessToken
+  //   }
+  // }).then(response => {
+  //   if (response.status == 204) {
+  //     logText("successfully set song on mini");
+  //   }
+  // }).catch(error => {
+  //   if (error.response.status == 404) {
+  //     logText("error setting song on mini - " + error.response.status + ' : ' + error.response.statusText, 1, 1);
+  //     main();
+  //   }
+  // });
+  startSpotify()
+  .then(() => {
+    playSpotify(songId)
+    .then(() => {
       main();
-    }
+    })
+    .catch(error => {
+      logText(error, 1, 0);
+    });
+  })
+  .catch(error => {
+    logText(error, 1, 0);
   });
 }
 
