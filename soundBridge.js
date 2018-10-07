@@ -114,9 +114,9 @@ function setSoundBridgeSong(accessToken, songId, songPosition) {
     }
   }).catch(error => {
     if (error.response.status == 404) {
-      logText(error, 1, 0);
+      logText("error setting song on mini - " + error.response.status + ' : ' + error.response.statusText, 1, 1);
+      main();
     }
-    logText("error setting song on mini - " + error.response.status + ' : ' + error.response.statusText, 1, 1);
   });
 }
 
@@ -154,12 +154,10 @@ function monitorPlayingSong(accessToken, rokuConnection) {
           // turn off the soundbridge
           rokuConnection.exec('SetPowerState standby');
         }
-      } else {
+      }
+      else if (response.status == 401) {
         logText("error getting currently playing song - " + response.response.status + ' : ' + response.response.statusText, 0, 1);
-        if (response.response.statusText == 'The access token expired') {
-          logText('expired token', 0, 1);
-          main();
-        }
+        main();
       }
     })
     .catch(error => {
