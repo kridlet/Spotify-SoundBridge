@@ -230,7 +230,7 @@ function main() {
 
 startSpotify()
   .then(() => {
-    playSpotify()
+    playSpotify('5ztIul377mylwHJkCnIWbn')
     .then(() => {
       main();
     })
