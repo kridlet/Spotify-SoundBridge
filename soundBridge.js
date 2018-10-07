@@ -1,3 +1,6 @@
+const osascript = require('node-osascript');
+const Promise = require('bluebird');
+const execute = Promise.promisify(osascript.execute);
 const axios = require('axios');
 const Telnet = require('telnet-client');
 const fs = require('fs');

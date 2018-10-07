@@ -1,7 +1,9 @@
 {
   "dependencies": {
+    "Promise": "^1.0.5",
     "axios": "^0.18.0",
     "dotenv": "^6.0.0",
+    "osascript": "^1.2.0",
     "telnet-client": "^0.16.1"
   }
 }
