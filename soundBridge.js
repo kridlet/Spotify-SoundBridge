@@ -227,6 +227,10 @@ function main() {
     });
 }
 
-spotify = startSpotify();
-console.log(spotify);
-main();
+startSpotify()
+  .then(() => {
+    main();
+  })
+  .catch(error => {
+    logText(error, 1, 0);
+  });
