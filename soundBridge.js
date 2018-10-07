@@ -188,6 +188,10 @@ function startSpotify(){
 	return execute('tell application "Spotify" to activate');
 }
 
+function playSpotify(uri){
+		return execute('tell application "Spotify" to play track uri', {uri});
+}
+
 function main() {
   getAccessTokens()
     .then(() => {
@@ -226,7 +230,13 @@ function main() {
 
 startSpotify()
   .then(() => {
-    main();
+    playSpotify()
+    .then(() => {
+      main();
+    })
+    .catch(error => {
+      logText(error, 1, 0);
+    });
   })
   .catch(error => {
     logText(error, 1, 0);
