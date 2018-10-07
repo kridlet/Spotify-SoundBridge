@@ -188,7 +188,6 @@ function startSpotify(){
 	return execute('tell application "Spotify" to activate');
 }
 
-
 function main() {
   getAccessTokens()
     .then(() => {
