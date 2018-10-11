@@ -93,6 +93,8 @@ async function getCurrentSong(accessToken) {
     return response;
   } catch (error) {
     logText(error,1,0);
+    logText("error getting currently playing song - " + response.response.status + ' : ' + response.response.statusText, 0, 1);
+    main();
     return error;
   }
 }
