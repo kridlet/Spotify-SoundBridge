@@ -227,7 +227,7 @@ function main() {
           rokuConnection.connect(rokuParams)
           .then(() => {
             monitorPlayingSong(dirkAccessToken.data.access_token, rokuConnection);
-            setInterval(monitorPlayingSong, 1000, dirkAccessToken.data.access_token, rokuConnection);
+            setInterval(monitorPlayingSong, 2000, dirkAccessToken.data.access_token, rokuConnection);
           })
         }
         else {
