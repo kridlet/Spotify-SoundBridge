@@ -170,7 +170,7 @@ function monitorPlayingSong(accessToken, rokuConnection) {
           rokuConnection.exec('SetPowerState standby');
         }
       }
-      else if (response.status == 401) {
+      else {
         logText("error getting currently playing song - " + response.response.status + ' : ' + response.response.statusText, 0, 1);
         main();
       }
