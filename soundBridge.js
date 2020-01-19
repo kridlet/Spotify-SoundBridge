@@ -163,6 +163,9 @@ function monitorPlayingSong(accessToken, rokuConnection) {
             // set the soundbridge song to the spotify song, at the correct playback postiion
             setSoundBridgeSong(miniAccessToken.data.access_token, songId, songPosition);
           }
+          else {
+            unpauseSpotify();
+          }
         } else {
           powerState = 'standby';
           // pause the mini spotify
@@ -213,6 +216,11 @@ function playSpotify(uri){
 function pauseSpotify(){
   logText("successfully paused sopotify on mini");
   return execute('tell application "Spotify" to pause');
+}
+
+function unpauseSpotify(){
+  logText("successfully un-paused sopotify on mini");
+  return execute('tell application "Spotify" to play');
 }
 
 function main() {
