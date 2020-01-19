@@ -11,13 +11,12 @@ let rokuConnection = new Telnet()
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
 const dirkRefreshToken = process.env.DIRK_REFRESH;
-const jessRefreshToken = process.env.JESS_RERFESH;
-const miniRefreshToken = process.env.MINI_REFRESH;
+const miniRefreshToken = process.env.NEW_MINI_REFRESH;
 
 let songId = '';
 let powerState = 'stanby';
 let rokuParams = {
-  host: '10.0.10.35',
+  host: '10.0.10.90',
   port: 5555,
   shellPrompt: '',
   timeout: 1500
