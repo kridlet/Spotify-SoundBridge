@@ -147,7 +147,7 @@ function monitorPlayingSong(accessToken, rokuConnection) {
             rokuConnection.exec('PlayPreset 0');
             powerState = 'on';
           }
-          // if it is not the same song from last pass
+          // if it is not the same song from last check
           if (response.data.item.id != songId) {
             // update the songId
             songId = response.data.item.id;
@@ -165,6 +165,8 @@ function monitorPlayingSong(accessToken, rokuConnection) {
           }
         } else {
           powerState = 'standby';
+          // pause the mini spotify
+          pauseSpotify();
           // turn off the soundbridge
           rokuConnection.exec('SetPowerState standby');
         }
@@ -208,12 +210,17 @@ function playSpotify(uri){
 		return execute('tell application "Spotify" to play track uri', {uri});
 }
 
+function pauseSpotify(){
+  logText("successfully paused sopotify on mini");
+  return execute('tell application "Spotify" to pause');
+}
+
 function main() {
   getAccessTokens()
     .then(() => {
       getSpotifyState(dirkAccessToken.data.access_token)
       .then(response => {
-        // console.log(response);
+        console.log(response);
         // if there is not an active spotify client
         if (response.status == 204) {
         
