@@ -74,21 +74,21 @@ connection.on('ready', function () {
   connection.exec('sketch', {
       shellPrompt: 'sketch> '
     })
-    .then(function () {
-      drawAttention(30);
-    })
-    .then(function () {
-      displayMessage("I <3 U");
-    })
-    .then(function () {
-      drawAttention(30);
-    })
-    .then(function () {
-      displayMessage("a lot");
-    })
     // .then(function () {
-    //   drawSomething();
+    //   drawAttention(30);
     // })
+    // .then(function () {
+    //   displayMessage("I <3 U");
+    // })
+    // .then(function () {
+    //   drawAttention(30);
+    // })
+    // .then(function () {
+    //   displayMessage("a lot");
+    // })
+    .then(function () {
+      drawSomething();
+    })
     // .then(function () {
     //   drawArray(pixelArray);
     //   for (i=0; i<10; i++) {
