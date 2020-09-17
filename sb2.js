@@ -86,18 +86,18 @@ connection.on('ready', function () {
     .then(function () {
       displayMessage("a lot");
     })
-    // .then(function () {
-    //   drawSomething();
-    // })
-    // .then(function () {
-    //   drawArray(pixelArray);
-    //   for (i=0; i<10; i++) {
-    //     twinkleArray = randomArray(Math.round(pixelArray.length*.1), pixelArray.length)
-    //     console.log(twinkleArray);
-    //     twinkle(pixelArray, twinkleArray, 0);
-    //     twinkle(pixelArray, twinkleArray, 1);
-    //   }
-    // })
+    .then(function () {
+      drawSomething();
+    })
+    .then(function () {
+      drawArray(pixelArray);
+      for (i=0; i<10; i++) {
+        twinkleArray = randomArray(Math.round(pixelArray.length*.1), pixelArray.length)
+        console.log(twinkleArray);
+        twinkle(pixelArray, twinkleArray, 0);
+        twinkle(pixelArray, twinkleArray, 1);
+      }
+    })
 })
 
 connection.on('timeout', function () {
